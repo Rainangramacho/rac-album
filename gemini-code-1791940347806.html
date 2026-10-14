@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nosso Álbum de Memórias</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fdf2f8;
+            --book-cover: #d17a96;
+            --book-page: #fffdf5;
+            --text-color: #5a3a44;
+            --slot-bg: #f3e8eb;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#f4d9e1 2px, transparent 2px);
+            background-size: 30px 30px;
+            font-family: 'Quicksand', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .album-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1000px;
+            height: 85vh;
+            max-height: 700px;
+            perspective: 2000px; 
+        }
+
+        .cover {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--book-cover), #b05c75);
+            border-radius: 10px 20px 20px 10px;
+            box-shadow: 10px 10px 30px rgba(0,0,0,0.2), inset 5px 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1), opacity 0.8s;
+            transform-origin: left center;
+        }
+
+        .cover.open {
+            transform: rotateY(-110deg);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cover h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 4rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .cover p {
+            color: #ffe3eb;
+            font-size: 1.2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .book {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #d8c3a5;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.4s;
+            transform-style: preserve-3d;
+        }
+
+        .book.visible { opacity: 1; }
+
+        .book::after {
+            content: '';
+            position: absolute;
+            left: 50%; top: 0; bottom: 0;
+            width: 40px; margin-left: -20px;
+            background: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.1));
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .page {
+            flex: 1;
+            background: var(--book-page);
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .page.left { border-radius: 10px 0 0 10px; box-shadow: inset -5px 0 10px rgba(0,0,0,0.05); }
+        .page.right { border-radius: 0 10px 10px 0; box-shadow: inset 5px 0 10px rgba(0,0,0,0.05); }
+
+        .page::-webkit-scrollbar { width: 6px; }
+        .page::-webkit-scrollbar-thumb { background: #e6c5ce; border-radius: 10px; }
+
+        .flipping-page {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        .flipping-page.next { right: 0; transform-origin: left center; }
+        .flipping-page.prev { left: 0; transform-origin: right center; }
+
+        .flipping-page .front, .flipping-page .back {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            background: var(--book-page);
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+        }
+
+        .flipping-page .back { transform: rotateY(180deg); }
+        .flipping-page.next.turn { transform: rotateY(-180deg); }
+        .flipping-page.prev.turn { transform: rotateY(180deg); }
+
+        .theme-title {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--book-cover);
+            border-bottom: 2px dashed #e6c5ce;
+            padding-bottom: 10px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Botão "+" ao lado do título */
+        .btn-add-inline {
+            background: var(--book-cover);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif; 
+        }
+
+        .btn-add-inline:hover {
+            transform: scale(1.15);
+            background: #b05c75;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding-bottom: 60px;
+        }
+
+        .photo-slot:nth-child(5) { grid-column: span 2; justify-self: center; width: 50%; }
+
+        .photo-slot {
+            background-color: white;
+            border: 1px solid #eee;
+            aspect-ratio: 3 / 4; 
+            padding: 5% 5% 26% 5%; 
+            box-shadow: 2px 5px 10px rgba(0,0,0,0.08);
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-clip: content-box;
+        }
+
+        .photo-slot:hover { transform: scale(1.03) rotate(1deg); box-shadow: 5px 10px 20px rgba(0,0,0,0.15); z-index: 5; }
+
+        .photo-slot span.add-text {
+            color: #aaa; font-size: 0.9rem; pointer-events: none;
+            background: rgba(255,255,255,0.8); padding: 5px 10px; border-radius: 10px;
+        }
+
+        .photo-caption {
+            position: absolute;
+            bottom: 2%;
+            left: 5%;
+            right: 5%;
+            height: 20%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            background: transparent;
+            outline: none;
+            overflow: hidden;
+            z-index: 10;
+            cursor: text;
+        }
+
+        .photo-caption:empty:before {
+            content: "Escreva algo...";
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        .photo-slot input[type="file"] { display: none; }
+
+        .slot-actions {
+            position: absolute; 
+            top: 5%; 
+            left: 5%; 
+            right: 5%; 
+            bottom: 26%;
+            background: rgba(0,0,0,0.4); 
+            display: none; 
+            justify-content: center;
+            align-items: center; 
+            gap: 15px; 
+            opacity: 0; 
+            transition: opacity 0.2s; 
+            border-radius: 2px;
+        }
+
+        .photo-slot.has-photo:hover .slot-actions { display: flex; opacity: 1; }
+
+        .action-btn {
+            background: white; border: none; border-radius: 50%; width: 45px; height: 45px;
+            font-size: 20px; cursor: pointer; display: flex; justify-content: center;
+            align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.2s; color: var(--text-color);
+        }
+
+        .action-btn:hover { transform: scale(1.15); }
+        .btn-edit { color: #0275d8; }
+        .btn-delete { color: #d9534f; }
+
+        .nav-buttons {
+            position: absolute; bottom: 20px; width: 100%; display: flex;
+            justify-content: space-between; align-items: center; padding: 0 40px; z-index: 20; pointer-events: none;
+        }
+
+        .btn {
+            background: var(--book-cover); color: white; border: none; padding: 12px 24px;
+            border-radius: 30px; cursor: pointer; font-family: 'Quicksand', sans-serif;
+            font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: background 0.2s, transform 0.2s; pointer-events: auto;
+        }
+
+        .btn:hover:not(:disabled) { background: #b05c75; transform: translateY(-2px); }
+        .btn:disabled { background: #d8c3a5; color: #888; cursor: not-allowed; box-shadow: none; }
+        
+        .btn-add {
+            background: #b05c75;
+            padding: 12px 20px;
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease;
+        }
+
+        .modal.show { display: flex; opacity: 1; }
+
+        .modal-content {
+            max-width: 90%; max-height: 85%; background: white; padding: 10px 10px 40px 10px;
+            border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: zoomIn 0.3s ease;
+        }
+
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .close-modal {
+            position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.2s;
+        }
+        .close-modal:hover { color: #ccc; }
+
+        @media (max-width: 768px) {
+            body { overflow-y: auto; align-items: flex-start; padding: 10px; }
+            .album-container { width: 100%; height: 95vh; max-height: none; }
+            .cover h1 { font-size: 3rem; }
+            .book { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+            .book::after { display: none; }
+            .page { width: 100%; border-radius: 10px; padding: 15px; overflow-y: visible; }
+            .page.left, .page.right { box-shadow: none; border-radius: 0; }
+            .theme-title { font-size: 2rem; }
+            #right-page .theme-title { display: none; }
+            .photo-grid { gap: 10px; padding-bottom: 20px; }
+            .photo-slot:nth-child(5) { width: 80%; }
+            .nav-buttons { position: fixed; bottom: 15px; left: 0; padding: 0 10px; width: 100%; gap: 5px; }
+            .btn { padding: 10px 12px; font-size: 0.85rem; }
+            .btn-add { padding: 10px 12px; }
+            .btn-add-inline { width: 26px; height: 26px; font-size: 14px; margin-left: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="album-container">
+        <!-- Capa -->
+        <div id="cover" class="cover" onclick="openAlbum()">
+            <h1>Nosso Álbum</h1>
+            <p>♥ Clique para abrir ♥</p>
+        </div>
+
+        <!-- Livro -->
+        <div id="book" class="book">
+            <div class="page left" id="left-page"></div>
+            <div class="page right" id="right-page"></div>
+
+            <div class="nav-buttons">
+                <button class="btn" id="prevBtn" onclick="changeSpread(-1)">← Voltar</button>
+                <button class="btn btn-add" onclick="addNewTheme()">Adicionar novo tema</button>
+                <button class="btn" id="nextBtn" onclick="changeSpread(1)">Avançar →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Visualização -->
+    <div id="photo-modal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modal-img" onclick="event.stopPropagation()">
+    </div>
+
+    <script>
+        const defaultSpreads = [
+            "Nossas Viagens", "Nossas Viagens",
+            "Momentos em Família", "Momentos em Família",
+            "Nossos Pets", "Nossos Pets",
+            "Festas & Celebrações", "Festas & Celebrações",
+            "Dias Preguiçosos", "Dias Preguiçosos"
+        ];
+
+        let bookSpreads = JSON.parse(localStorage.getItem('myAlbumSpreads'));
+        if (!bookSpreads) {
+            bookSpreads = [...defaultSpreads];
+            localStorage.setItem('myAlbumSpreads', JSON.stringify(bookSpreads));
+        }
+
+        let totalSpreads = bookSpreads.length;
+        let currentSpread = 0;
+        let isAnimating = false; 
+
+        const pageTurnSound = new Audio('oxidvideos-page-flip-smaller-page-453027.mp3');
+        pageTurnSound.volume = 0.8;
+
+        function openAlbum() {
+            pageTurnSound.play().then(() => {
+                pageTurnSound.pause();
+                pageTurnSound.currentTime = 0;
+            }).catch(() => {});
+
+            document.getElementById('cover').classList.add('open');
+            document.getElementById('book').classList.add('visible');
+            renderSpread();
+        }
+
+        function playSound() {
+            try {
+                pageTurnSound.currentTime = 0;
+                pageTurnSound.play().catch(err => console.log("Áudio bloqueado."));
+            } catch(e) {}
+        }
+
+        function addNewTheme() {
+            const themeName = prompt("Qual o título para o novo tema? (Ex: Dia dos Namorados)");
+            if (themeName && themeName.trim() !== "") {
+                bookSpreads.push(themeName.trim());
+                localStorage.setItem('myAlbumSpreads', JSON.stringify(bookSpreads));
+                totalSpreads = bookSpreads.length;
+                
+                renderSpread();
+                
+                if (confirm("Tema adicionado com sucesso no final do álbum! Deseja ir para ele agora?")) {
+                    currentSpread = totalSpreads - 1;
+                    renderSpread();
+                }
+            }
+        }
+
+        function insertSpreadAfterCurrent(event) {
+            if (event) event.stopPropagation(); 
+            
+            const currentTheme = bookSpreads[currentSpread];
+            const insertIndex = currentSpread + 1;
+
+            for (let i = totalSpreads - 1; i >= insertIndex; i--) {
+                ['left', 'right'].forEach(side => {
+                    for (let j = 1; j <= 5; j++) {
+                        const oldPhotoKey = `photo_${i}_${side}_${j}`;
+                        const newPhotoKey = `photo_${i+1}_${side}_${j}`;
+                        const photoData = localStorage.getItem(oldPhotoKey);
+                        
+                        if (photoData) {
+                            localStorage.setItem(newPhotoKey, photoData);
+                            localStorage.removeItem(oldPhotoKey);
+                        }
+
+                        const oldDescKey = `desc_photo_${i}_${side}_${j}`;
+                        const newDescKey = `desc_photo_${i+1}_${side}_${j}`;
+                        const descData = localStorage.getItem(oldDescKey);
+                        
+                        if (descData) {
+                            localStorage.setItem(newDescKey, descData);
+                            localStorage.removeItem(oldDescKey);
+                        }
+                    }
+                });
+            }
+
+            bookSpreads.splice(insertIndex, 0, currentTheme);
+            localStorage.setItem('myAlbumSpreads', JSON.stringify(bookSpreads));
+            totalSpreads = bookSpreads.length;
+
+            renderSpread(); 
+            
+            if (confirm(`Páginas de "${currentTheme}" duplicadas com sucesso logo a seguir! Deseja preenchê-las agora?`)) {
+                changeSpread(1); 
+            }
+        }
+
+        function getPageHTML(spreadIndex, side) {
+            const displayTheme = bookSpreads[spreadIndex];
+            
+            let html = '';
+            if (side === 'left') {
+                html += `<h2 class="theme-title">
+                            ${displayTheme} 
+                            <button class="btn-add-inline" onclick="insertSpreadAfterCurrent(event)" title="Adicionar mais páginas deste tema na sequência">+</button>
+                         </h2>`;
+                html += `<div class="photo-grid">${generateSlots(spreadIndex, 'left')}</div>`;
+            } else {
+                html += `<h2 class="theme-title" style="visibility: hidden; margin-bottom: 0; padding:0; height: 0;">${displayTheme}</h2>`;
+                html += `<div class="photo-grid" style="padding-bottom: 80px;">${generateSlots(spreadIndex, 'right')}</div>`;
+            }
+            return html;
+        }
+
+        function populatePhotos(element, spreadIndex, side) {
+            for (let i = 1; i <= 5; i++) {
+                const photoId = `photo_${spreadIndex}_${side}_${i}`;
+                const savedData = localStorage.getItem(photoId);
+                if (savedData) {
+                    const slot = element.querySelector(`#slot_${photoId}`);
+                    const text = element.querySelector(`#text_${photoId}`);
+                    const caption = element.querySelector(`#caption_${photoId}`);
+                    
+                    if (slot) {
+                        slot.style.backgroundImage = `url(${savedData})`;
+                        slot.classList.add('has-photo');
+                        if (text) text.style.display = 'none';
+                        if (caption) {
+                            caption.style.display = 'flex';
+                            caption.innerText = localStorage.getItem('desc_' + photoId) || '';
+                        }
+                    }
+                }
+            }
+        }
+
+        function renderSpread() {
+            const leftPage = document.getElementById('left-page');
+            const rightPage = document.getElementById('right-page');
+            
+            leftPage.innerHTML = getPageHTML(currentSpread, 'left');
+            rightPage.innerHTML = getPageHTML(currentSpread, 'right');
+            
+            populatePhotos(leftPage, currentSpread, 'left');
+            populatePhotos(rightPage, currentSpread, 'right');
+
+            document.getElementById('prevBtn').disabled = currentSpread === 0;
+            document.getElementById('nextBtn').disabled = currentSpread === totalSpreads - 1;
+
+            if(window.innerWidth <= 768) {
+                document.getElementById('book').scrollTo(0,0);
+            }
+        }
+
+        function generateSlots(spreadIndex, side) {
+            let html = '';
+            for (let i = 1; i <= 5; i++) {
+                const photoId = `photo_${spreadIndex}_${side}_${i}`;
+                html += `
+                    <div class="photo-slot" id="slot_${photoId}" onclick="handleSlotClick('${photoId}')">
+                        <span class="add-text" id="text_${photoId}">+ Foto</span>
+                        
+                        <div class="slot-actions">
+                            <button class="action-btn btn-edit" title="Editar Foto" onclick="editPhoto(event, '${photoId}')">✎</button>
+                            <button class="action-btn btn-delete" title="Excluir Foto" onclick="deletePhoto(event, '${photoId}')">✖</button>
+                        </div>
+                        
+                        <div class="photo-caption" id="caption_${photoId}" contenteditable="true" 
+                             spellcheck="false" style="display: none;" 
+                             onclick="event.stopPropagation()" 
+                             oninput="saveCaption('${photoId}', this.innerText)"></div>
+
+                        <input type="file" id="input_${photoId}" accept="image/*" onchange="handleUpload(event, '${photoId}')" onclick="event.stopPropagation()">
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function saveCaption(photoId, text) {
+            localStorage.setItem('desc_' + photoId, text);
+        }
+
+        function changeSpread(direction) {
+            if (isAnimating) return;
+            const nextSpread = currentSpread + direction;
+            if (nextSpread < 0 || nextSpread >= totalSpreads) return;
+
+            playSound();
+
+            document.getElementById('prevBtn').disabled = nextSpread === 0;
+            document.getElementById('nextBtn').disabled = nextSpread === totalSpreads - 1;
+
+            if (window.innerWidth <= 768) {
+                isAnimating = true;
+                const bookDiv = document.getElementById('book');
+                bookDiv.style.transition = 'opacity 0.2s';
+                bookDiv.style.opacity = '0';
+                setTimeout(() => {
+                    currentSpread = nextSpread;
+                    renderSpread();
+                    bookDiv.style.opacity = '1';
+                    isAnimating = false;
+                }, 200);
+                return;
+            }
+
+            isAnimating = true;
+            const book = document.getElementById('book');
+            
+            const flipContainer = document.createElement('div');
+            flipContainer.className = 'flipping-page ' + (direction === 1 ? 'next' : 'prev');
+
+            const frontDiv = document.createElement('div');
+            frontDiv.className = 'page front ' + (direction === 1 ? 'right' : 'left');
+            
+            const backDiv = document.createElement('div');
+            backDiv.className = 'page back ' + (direction === 1 ? 'left' : 'right');
+
+            const leftPageEl = document.getElementById('left-page');
+            const rightPageEl = document.getElementById('right-page');
+
+            if (direction === 1) { 
+                frontDiv.innerHTML = rightPageEl.innerHTML;
+                backDiv.innerHTML = getPageHTML(nextSpread, 'left');
+                populatePhotos(backDiv, nextSpread, 'left');
+                rightPageEl.innerHTML = getPageHTML(nextSpread, 'right');
+                populatePhotos(rightPageEl, nextSpread, 'right');
+            } else { 
+                frontDiv.innerHTML = leftPageEl.innerHTML;
+                backDiv.innerHTML = getPageHTML(nextSpread, 'right');
+                populatePhotos(backDiv, nextSpread, 'right');
+                leftPageEl.innerHTML = getPageHTML(nextSpread, 'left');
+                populatePhotos(leftPageEl, nextSpread, 'left');
+            }
+
+            flipContainer.appendChild(frontDiv);
+            flipContainer.appendChild(backDiv);
+            book.appendChild(flipContainer);
+
+            void flipContainer.offsetWidth;
+            flipContainer.classList.add('turn');
+
+            setTimeout(() => {
+                if (flipContainer.parentNode) flipContainer.parentNode.removeChild(flipContainer);
+                currentSpread = nextSpread;
+                renderSpread(); 
+                isAnimating = false;
+            }, 800); 
+        }
+
+        function handleSlotClick(photoId) {
+            const slot = document.getElementById(`slot_${photoId}`);
+            if (slot.classList.contains('has-photo')) {
+                const imgData = localStorage.getItem(photoId);
+                openModal(imgData);
+            } else {
+                document.getElementById(`input_${photoId}`).click();
+            }
+        }
+
+        function editPhoto(event, photoId) {
+            event.stopPropagation(); 
+            document.getElementById(`input_${photoId}`).click();
+        }
+
+        function deletePhoto(event, photoId) {
+            event.stopPropagation(); 
+            if (confirm("Tem certeza que deseja remover esta foto?")) {
+                localStorage.removeItem(photoId);
+                localStorage.removeItem('desc_' + photoId); 
+                
+                const slot = document.getElementById(`slot_${photoId}`);
+                const text = document.getElementById(`text_${photoId}`);
+                const caption = document.getElementById(`caption_${photoId}`);
+                
+                slot.style.backgroundImage = '';
+                slot.classList.remove('has-photo');
+                if (text) text.style.display = 'block';
+                if (caption) {
+                    caption.style.display = 'none';
+                    caption.innerText = '';
+                }
+            }
+        }
+
+        function handleUpload(event, photoId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                compressImage(e.target.result, 800, function(compressedData) {
+                    applyImageToSlot(photoId, compressedData);
+                    try {
+                        localStorage.setItem(photoId, compressedData);
+                    } catch (e) {
+                        alert("O armazenamento do navegador está cheio! Você adicionou muitas fotos.");
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function applyImageToSlot(photoId, imageData) {
+            const slot = document.getElementById(`slot_${photoId}`);
+            const text = document.getElementById(`text_${photoId}`);
+            const caption = document.getElementById(`caption_${photoId}`);
+            
+            if (slot) {
+                slot.style.backgroundImage = `url(${imageData})`;
+                slot.classList.add('has-photo');
+                if (text) text.style.display = 'none';
+                if (caption) caption.style.display = 'flex'; 
+            }
+        }
+
+        function openModal(imgData) {
+            if (!imgData) return;
+            const modal = document.getElementById('photo-modal');
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = imgData;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('photo-modal').classList.remove('show');
+        }
+
+        function compressImage(base64Str, maxWidth, callback) {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                callback(canvas.toDataURL('image/jpeg', 0.8));
+            };
+        }
+    </script>
+</body>
+</html>
