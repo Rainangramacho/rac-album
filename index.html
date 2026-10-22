@@ -164,7 +164,6 @@
             align-items: center;
         }
 
-        /* Botão "+" ao lado do título */
         .btn-add-inline {
             background: var(--book-cover);
             color: white;
@@ -319,6 +318,93 @@
         }
         .close-modal:hover { color: #ccc; }
 
+        /* =========================================
+           NOVOS ESTILOS DO SPOTIFY
+           ========================================= */
+        .music-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--book-cover);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            font-size: 26px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.3s, background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .music-toggle-btn:hover {
+            transform: scale(1.1);
+            background: #b05c75;
+        }
+
+        .music-sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px; /* Começa escondida */
+            width: 320px;
+            height: 100vh;
+            background: var(--book-page);
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            transition: right 0.4s ease;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid var(--book-cover);
+        }
+
+        .music-sidebar.open {
+            right: 0;
+        }
+
+        .music-sidebar h3 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.2rem;
+            color: var(--book-cover);
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .music-sidebar p {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #888;
+            margin-bottom: 25px;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .close-sidebar-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close-sidebar-btn:hover {
+            transform: scale(1.2);
+            color: #d9534f;
+        }
+
+        .spotify-container {
+            width: 100%;
+            flex-grow: 1;
+        }
+
         @media (max-width: 768px) {
             body { overflow-y: auto; align-items: flex-start; padding: 10px; }
             .album-container { width: 100%; height: 95vh; max-height: none; }
@@ -335,10 +421,28 @@
             .btn { padding: 10px 12px; font-size: 0.85rem; }
             .btn-add { padding: 10px 12px; }
             .btn-add-inline { width: 26px; height: 26px; font-size: 14px; margin-left: 10px; }
+            
+            /* Ajustes Mobile do Spotify */
+            .music-toggle-btn { top: 15px; right: 15px; width: 45px; height: 45px; font-size: 20px; }
+            .music-sidebar { width: 85%; right: -100%; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Botão de Música Flutuante -->
+    <button class="music-toggle-btn" onclick="toggleMusicMenu()" title="Nossa Trilha Sonora">🎵</button>
+
+    <!-- Menu Lateral do Spotify -->
+    <div id="music-sidebar" class="music-sidebar">
+        <button class="close-sidebar-btn" onclick="toggleMusicMenu()" title="Fechar">✖</button>
+        <h3>Nossa Playlist</h3>
+        <p>Aperte o play para acompanhar as memórias...</p>
+        <div class="spotify-container">
+            <!-- Cole o código do Spotify exatamente aqui -->
+            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/0CyCs1mGxtTVujmswYG9lP?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+    </div>
 
     <div class="album-container">
         <!-- Capa -->
@@ -404,6 +508,12 @@
                 pageTurnSound.currentTime = 0;
                 pageTurnSound.play().catch(err => console.log("Áudio bloqueado."));
             } catch(e) {}
+        }
+
+        // Função para abrir/fechar o menu de música
+        function toggleMusicMenu() {
+            const sidebar = document.getElementById('music-sidebar');
+            sidebar.classList.toggle('open');
         }
 
         function addNewTheme() {
