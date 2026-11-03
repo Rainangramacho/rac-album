@@ -13,7 +13,7 @@ jobs:
       - name: Login no Magalu Cloud Container Registry
         uses: docker/login-action@v2
         with:
-          registry: cr.br-se1.magalu.cloud # Exemplo de endpoint
+          registry: container-registry.br-se1.magalu.cloud # Exemplo de endpoint
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
           
@@ -22,7 +22,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: cr.br-se1.magalu.cloud/rac-album/api:latest
+          tags: container-registry.br-se1.magalu.cloud/rac-album/api:latest
 
   deploy:
     needs: build-and-push
@@ -35,8 +35,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker login cr.br-se1.magalu.cloud -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
-            docker pull cr.br-se1.magalu.cloud/rac-album/api:latest
+            docker login container-registry.br-se1.magalu.cloud -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+            docker pull container-registry.br-se1.magalu.cloud/rac-album/api:latest
             docker stop minha-api || true
             docker rm minha-api || true
-            docker run -d --name minha-api -p 80:8080 cr.br-se1.magalu.cloud/rac-album/api:latest
+            docker run -d --name minha-api -p 80:8080 container-registry.br-se1.magalu.cloud/rac-album/api:latest
