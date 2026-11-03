@@ -1,0 +1,42 @@
+name: Deploy API to Magalu Cloud
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Login no Magalu Cloud Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: br-se1.magalu.cloud # Exemplo de endpoint
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+          
+      - name: Build e Push da Imagem
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: br-se1.magalu.cloud/seu-projeto/api:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy na Máquina Virtual via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker login br-se1.magalu.cloud -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+            docker pull br-se1.magalu.cloud/seu-projeto/api:latest
+            docker stop minha-api || true
+            docker rm minha-api || true
+            docker run -d --name minha-api -p 80:8080 br-se1.magalu.cloud/seu-projeto/api:latest
