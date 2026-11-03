@@ -20,7 +20,7 @@ jobs:
       - name: Build e Push da Imagem
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./backend
           push: true
           tags: container-registry.br-se1.magalu.cloud/rac-album/api:latest
 
@@ -37,6 +37,6 @@ jobs:
           script: |
             docker login container-registry.br-se1.magalu.cloud -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
             docker pull container-registry.br-se1.magalu.cloud/rac-album/api:latest
-            docker stop minha-api || true
-            docker rm minha-api || true
-            docker run -d --name minha-api -p 80:8080 container-registry.br-se1.magalu.cloud/rac-album/api:latest
+            docker stop rac-album-api || true
+            docker rm rac-album-api || true
+            docker run -d --name rac-album-api -p 80:8080 container-registry.br-se1.magalu.cloud/rac-album/api:latest
